@@ -11,12 +11,17 @@
 <style>
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
 html,body{min-height:100%;width:100%}
-body{font-family:'Josefin Sans',sans-serif;background:#080503;color:#F0E6D0;overflow-x:hidden}
-:root{--gold:#C9A050;--parchment:#F0E6D0;--muted:#9A8A70;--deep:#7A6A50;--card-bg:rgba(12,8,4,0.82);--danger:#C85040;--venmo:#008CFF;--paypal:#003087;}
-.scene{min-height:100vh;width:100%;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:2rem 1.25rem;position:relative;}
-.scene-bg{position:fixed;inset:0;background-image:url('./hero.jpg');background-size:cover;background-position:center top;z-index:0;}
-.scene-overlay{position:fixed;inset:0;background:linear-gradient(to bottom,rgba(8,5,3,0.72) 0%,rgba(8,5,3,0.60) 40%,rgba(8,5,3,0.82) 100%);z-index:1;}
-.scene-fallback{position:fixed;inset:0;background:radial-gradient(ellipse at 75% 25%,rgba(180,95,25,0.22) 0%,transparent 55%),radial-gradient(ellipse at 20% 80%,rgba(120,65,15,0.14) 0%,transparent 50%),radial-gradient(ellipse at 50% 50%,rgba(30,18,8,1) 0%,rgba(8,5,3,1) 100%);z-index:0;}
+body{font-family:'Josefin Sans',sans-serif;background:#13100a;color:#F0E6D0;overflow-x:hidden}
+:root{--gold:#C9A050;--parchment:#F0E6D0;--muted:#9A8A70;--deep:#7A6A50;--card-bg:rgba(22,15,6,0.92);--danger:#C85040;--venmo:#008CFF;--paypal:#003087;}
+.scene{min-height:100vh;width:100%;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:2rem 1.25rem;position:relative;
+background:
+  radial-gradient(ellipse at 70% 20%, rgba(160,90,20,0.28) 0%, transparent 55%),
+  radial-gradient(ellipse at 20% 80%, rgba(100,55,10,0.18) 0%, transparent 50%),
+  radial-gradient(ellipse at 50% 50%, rgba(25,16,6,1) 0%, rgba(18,11,4,1) 60%, rgba(12,8,3,1) 100%);}
+.scene-bg{display:none;}
+/* Soft edge diffusion — feathers image into dark bg on all sides */
+.scene-overlay{display:none;}
+
 .step{position:relative;z-index:10;width:100%;max-width:540px;transition:opacity .38s ease,transform .38s ease;}
 .step.fade-out{opacity:0;transform:translateY(20px);}
 .step.fade-in{opacity:1;transform:translateY(0);}
@@ -202,6 +207,8 @@ function App() {
   const [info,       setInfo]       = useState({ name:'', email:'', phone:'', street:'', city:'', state:'', zip:'' });
   const [errors,     setErrors]     = useState({});
   const [sending,    setSending]    = useState(false);
+  const [venmoOpened, setVenmoOpened] = useState(false);
+  const [payConfirmed,setPayConfirmed]= useState(false);
   const [payMethod,  setPayMethod]  = useState(null); // 'venmo' | 'paypal'
   const [orderId,    setOrderId]    = useState(() => genOrderId());
   const ppRendered = useRef(false);
@@ -476,7 +483,7 @@ function App() {
       case 4: return (
         <>
           <Progress active={4}/>
-          <button className="back" onClick={() => { ppRendered.current=false; go(3); }}>← Back</button>
+          <button className="back" onClick={() => { ppRendered.current=false; setVenmoOpened(false); setPayConfirmed(false); go(3); }}>← Back</button>
           <div className="wordmark">Step 4 of 4</div>
           <h1 className="headline">Order<br/><em>Summary</em></h1>
           <p className="subline">Review &amp; complete payment below</p>
@@ -520,30 +527,51 @@ function App() {
           <div className="payment-section">
 
             {/* VENMO — preferred */}
-            <div style={{marginBottom:'1.5rem'}}>
-              <span className="payment-preferred-badge">⭐ Preferred</span>
-              <p className="payment-title">Pay with Venmo — No Fees</p>
-              <a className="btn-venmo" href={buildVenmoLink()} target="_blank" rel="noopener noreferrer"
-                onClick={() => setPayMethod('venmo')}>
-                💙&nbsp; Pay {fmt(total)} via Venmo
-              </a>
-              {/* Order ID reminder */}
-              <div className="venmo-name-reminder">
-                <p>📝 <strong>Important:</strong> The note is pre-filled with your order ID (<strong>{orderId}</strong>). Please <strong>do not change it</strong> — it's the only way we can match your Venmo payment to your order.</p>
+            <span className="payment-preferred-badge">⭐ Preferred — No Fees</span>
+            <p className="payment-title" style={{marginTop:'.4rem'}}>Pay with Venmo</p>
+            <a className="btn-venmo" href={buildVenmoLink()} target="_blank" rel="noopener noreferrer"
+              onClick={() => { setVenmoOpened(true); }}>
+              💙&nbsp; Pay {fmt(total)} via Venmo
+            </a>
+
+            {/* Order ID reminder */}
+            <div className="venmo-name-reminder" style={{marginBottom:'1rem'}}>
+              <p>📝 The note is pre-filled with order ID <strong>{orderId}</strong>. Please do not change it — it's how we match your payment.</p>
+            </div>
+
+            {/* LOCKED: show placeholder until Venmo is opened */}
+            {!venmoOpened && (
+              <div style={{textAlign:'center',padding:'1rem',border:'1px solid rgba(201,160,80,0.12)',background:'rgba(201,160,80,0.03)',borderRadius:0}}>
+                <p style={{fontSize:'11px',color:'var(--deep)',letterSpacing:'.14em',textTransform:'uppercase'}}>
+                  🔒 Complete your Venmo payment first
+                </p>
+                <p style={{fontSize:'10px',color:'var(--deep)',opacity:.5,marginTop:'.35rem',letterSpacing:'.06em'}}>
+                  The confirmation checkbox will appear here once you tap Pay above
+                </p>
               </div>
-            </div>
+            )}
 
-            {/* How it works */}
-            <div className="venmo-steps">
-              <p className="venmo-steps-title">How to complete payment</p>
-              <div className="venmo-step"><div className="venmo-num">1</div><span>Tap Venmo above — opens with the exact amount &amp; your name pre-filled in the note.</span></div>
-              <div className="venmo-step"><div className="venmo-num">2</div><span>Complete the payment, then return here and tap <strong style={{color:'var(--gold)'}}>I've Sent Payment</strong>.</span></div>
-            </div>
-
-            <button className="btn-confirm" disabled={sending} onClick={() => submitOrder('venmo')}>
-              {sending ? '⏳  Logging your order...' : '✓   I\'ve Sent Payment via Venmo'}
-            </button>
-            {sending && <p className="sending-msg">Saving your order &amp; notifying Filipe…</p>}
+            {/* UNLOCKED: checkbox + confirm button appear after Venmo link clicked */}
+            {venmoOpened && (
+              <>
+                <div className="check-row"
+                  style={{padding:'.8rem .9rem',border:'1px solid rgba(201,160,80,0.28)',background:'rgba(201,160,80,0.05)'}}
+                  onClick={() => setPayConfirmed(p => !p)}>
+                  <div className={`check-box${payConfirmed ? ' ticked' : ''}`}><div className="check-mark"/></div>
+                  <span className="check-label">
+                    I confirm I have sent <strong style={{color:'var(--gold)'}}>{fmt(total)}</strong> to{' '}
+                    <strong style={{color:'var(--gold)'}}>@noblepalatesociety</strong> on Venmo with note{' '}
+                    <strong style={{color:'var(--gold)'}}>{orderId}</strong>.
+                  </span>
+                </div>
+                <button className="btn-confirm"
+                  disabled={!payConfirmed || sending}
+                  onClick={() => submitOrder('venmo')}>
+                  {sending ? '⏳  Logging your order...' : '✓   Complete My Order'}
+                </button>
+                {sending && <p className="sending-msg">Saving your order &amp; notifying Filipe…</p>}
+              </>
+            )}
 
             {/* PAYPAL — secondary */}
             <div className="pay-or">
@@ -552,12 +580,12 @@ function App() {
               <div className="pay-or-line"/>
             </div>
             <p style={{fontSize:'11px',color:'var(--deep)',letterSpacing:'.06em',marginBottom:'.75rem',textAlign:'center'}}>
-              PayPal processes instantly — your order is confirmed automatically.
+              PayPal confirms automatically — no extra step needed.
             </p>
             <div id="paypal-btn-container"/>
           </div>
 
-          <button className="btn-ghost" style={{marginTop:'1.25rem'}} onClick={() => { ppRendered.current=false; go(3); }}>← Back</button>
+          <button className="btn-ghost" style={{marginTop:'1.25rem'}} onClick={() => { ppRendered.current=false; setVenmoOpened(false); setPayConfirmed(false); go(3); }}>← Back</button>
         </>
       );
 
@@ -606,7 +634,7 @@ function App() {
     <div className="scene">
       <div className="scene-bg"/>
       <div className="scene-overlay"/>
-      <div className="scene-fallback"/>
+      
       <div className={`step${fading?' fade-out':' fade-in'}`}>
         {renderContent()}
       </div>
