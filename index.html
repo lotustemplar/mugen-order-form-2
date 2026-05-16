@@ -160,7 +160,7 @@ const MUGEN_IMG   = 'data:image/png;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/4gHYSUNDX
 const FREY_PRICE  = 119;
 const MUGEN_PRICE = 50;
 const TAX_RATE    = 0.0835;
-const SHIPPING    = { 0:0, 1:15, 2:20, 3:25 };
+const SHIPPING    = { 0:0, 1:15, 2:20, 3:25, 4:40 };
 const fmt         = n => '$' + Number(n).toFixed(2);
 const genOrderId  = () => {
   const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
@@ -360,7 +360,8 @@ function App() {
                 {qty:0, label:'Skip — No Frey Ranch',  detail:null},
                 {qty:1, label:'1 Bottle',               detail:`${fmt(FREY_PRICE)} + $9.94 tax`},
                 {qty:2, label:'2 Bottles',              detail:`${fmt(FREY_PRICE*2)} + $19.87 tax`},
-                {qty:3, label:'3 Bottles — Maximum',    detail:`${fmt(FREY_PRICE*3)} + $29.81 tax`},
+                {qty:3, label:'3 Bottles',               detail:`${fmt(FREY_PRICE*3)} + $29.81 tax`},
+              {qty:4, label:'4 Bottles',               detail:`${fmt(FREY_PRICE*4)} + $39.74 tax`},
               ].map(({qty,label,detail}) => (
                 <button key={qty} className={`qty-btn${freyQty===qty?' qs':''}`}
                   onClick={() => {setFreyQty(qty); if(qty===0) setDelivery(null);}}>
