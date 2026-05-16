@@ -259,7 +259,7 @@ function App() {
     return 'https://venmo.com/' + VENMO_HANDLE + '?txn=pay&amount=' + total.toFixed(2) + '&note=' + note;
   };
 
-  const submitOrder = async (method) => {
+  const logOrder = async (method) => {
     setSending(true);
     try {
       await fetch(APPS_SCRIPT_URL, {
@@ -277,7 +277,6 @@ function App() {
       });
     } catch (err) { console.warn('Log error:', err); }
     setSending(false);
-    go(5);
   };
 
   /* Render PayPal buttons when step 4 is active */
@@ -314,7 +313,7 @@ function App() {
           }],
           payer: {email_address: info.email},
         }),
-        onApprove: (data, actions) => actions.order.capture().then(() => submitOrder('paypal')),
+        onApprove: (data, actions) => actions.order.capture().then(() => { logOrder('paypal'); go(5); }),
         onError: err => console.error('PayPal error:', err),
       }).render('#paypal-btn-container');
     }, 200);
@@ -531,7 +530,7 @@ function App() {
             <span className="payment-preferred-badge">⭐ Preferred — No Fees</span>
             <p className="payment-title" style={{marginTop:'.4rem'}}>Pay with Venmo</p>
             <a className="btn-venmo" href={buildVenmoLink()} target="_blank" rel="noopener noreferrer"
-              onClick={() => { setVenmoOpened(true); }}>
+              onClick={() => { setVenmoOpened(true); logOrder('venmo'); }}>
               💙&nbsp; Pay {fmt(total)} via Venmo
             </a>
 
@@ -566,9 +565,9 @@ function App() {
                   </span>
                 </div>
                 <button className="btn-confirm"
-                  disabled={!payConfirmed || sending}
-                  onClick={() => submitOrder('venmo')}>
-                  {sending ? '⏳  Logging your order...' : '✓   Complete My Order'}
+                  disabled={!payConfirmed}
+                  onClick={() => go(5)}>
+                  ✓ &nbsp; Complete My Order
                 </button>
                 {sending && <p className="sending-msg">Saving your order &amp; notifying Filipe…</p>}
               </>
